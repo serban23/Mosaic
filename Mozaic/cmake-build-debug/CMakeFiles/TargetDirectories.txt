@@ -1,0 +1,3 @@
+C:/FACULTATE/3.2/PI/PROIECT/Mozaic/cmake-build-debug/CMakeFiles/Mozaic.dir
+C:/FACULTATE/3.2/PI/PROIECT/Mozaic/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/FACULTATE/3.2/PI/PROIECT/Mozaic/cmake-build-debug/CMakeFiles/rebuild_cache.dir
