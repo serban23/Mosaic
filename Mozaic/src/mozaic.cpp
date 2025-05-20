@@ -7,6 +7,9 @@ using namespace cv;
 #include <filesystem>
 using namespace std::filesystem;
 
+vector<float> bestMeans;
+vector<float> bestHistograms;
+
 ///GENEARE
 void generateTiles()
 {
@@ -119,6 +122,7 @@ Mat findBestMeans(const Scalar& segMean, vector<Mat> tiles)
         }
     }
 
+    bestMeans.push_back(bestDist);
     return tiles[bestTile];
 }
 
@@ -138,14 +142,6 @@ histogramsRGB computeHistograms(Mat img)
                 hG[pixel[1]]++;
                 hR[pixel[2]]++;
         }
-
-    //normalizarea histogramelor
-    for(float& val:hR)
-        val/=float(totalPixels);
-    for(float& val:hG)
-        val/=float(totalPixels);
-    for(float& val:hB)
-        val/=float(totalPixels);
 
     return {hR,hG,hB};
 }
@@ -179,7 +175,35 @@ Mat findBestHistograms(const histogramsRGB& segHist, vector<Mat> tiles)
         }
     }
 
+    bestHistograms.push_back(bestDist);
     return tiles[bestTile];
+}
+
+///FUNCTIE PENTRU AFISAREA DIFERENTELOR INTRE ORIGINAL SI MOZAIC
+Mat vectorToMat(vector<float> values) {
+    int n = values.size();
+    int dim = sqrt(n);
+
+    Mat m(dim*50,dim*50,CV_8UC1);
+
+    float minVal = *min_element(values.begin(), values.end());
+    float maxVal = *max_element(values.begin(), values.end());
+
+    for(int i=0;i<dim;i++)
+        for(int j=0;j<dim;j++)
+        {
+            float val = values[i*dim +j];
+
+            int pixelVal = 0;
+            if (maxVal>minVal) {
+                pixelVal = static_cast<int>(255.0f*(val-minVal)/(maxVal-minVal));
+            }
+
+            Rect tile(j*50,i*50, 50,50);
+            rectangle(m,tile,Scalar(pixelVal), FILLED);
+        }
+
+    return m;
 }
 
 ///TOP LEVEL PENTRU ALEGEREA TILE-URILOR
@@ -192,6 +216,8 @@ vector<Mat> findBestMatches(segments seg, const vector<Mat>& tiles, int op)
             Mat res = findBestMeans(segMeans, tiles);
             bestTiles.push_back(res);
         }
+        Mat m = vectorToMat(bestMeans);
+        imshow("DifFerence between means", m);
     }
     else if (op==2){ //histograma
         for(int i=0;i<seg.s.size();i++){
@@ -199,6 +225,8 @@ vector<Mat> findBestMatches(segments seg, const vector<Mat>& tiles, int op)
             Mat res = findBestHistograms(segHist, tiles);
             bestTiles.push_back(res);
         }
+        Mat m = vectorToMat(bestHistograms);
+        imshow("DifFerence between histograms", m);
     }
     else
         throw runtime_error("Error: Optinue gresita! Alegeti 1(media culorilor), 2(histograma)");
