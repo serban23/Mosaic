@@ -2,6 +2,7 @@
 #include <opencv2/opencv.hpp>
 #include <filesystem>
 #include "src/mozaic.h"
+#include <chrono>
 using namespace std;
 using namespace cv;
 namespace fs = std::filesystem;
@@ -46,8 +47,16 @@ int main() {
     }
 
     try{
+        auto start = chrono::high_resolution_clock::now();
         bestTilesMean = findBestMatches(seg, img.tiles, 1);
+        auto end = chrono::high_resolution_clock::now();
+        double duration = chrono::duration_cast<chrono::seconds>(end - start).count();
+        printf("\n Duration for means method: %lf seconds\n",duration);
+        start = chrono::high_resolution_clock::now();
         bestTilesHist = findBestMatches(seg, img.tiles, 2);
+        end = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<chrono::seconds>(end - start).count();
+        printf("\n Duration for histograms method: %lf seconds\n",duration);
     }
     catch(runtime_error& e){
         //prindem eroarea pentru optiune invalida
