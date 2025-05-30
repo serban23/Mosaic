@@ -1,0 +1,78 @@
+#include <iostream>
+#include <opencv2/opencv.hpp>
+#include <filesystem>
+#include "src/mozaic.h"
+#include <chrono>
+using namespace std;
+using namespace cv;
+namespace fs = std::filesystem;
+
+int main() {
+
+    images img;
+    segments seg;
+    vector<Mat> bestTilesMean, bestTilesHist;
+    int noSegments;
+
+    fs::path tilesPath("C:\\FACULTATE\\3.2\\PI\\PROIECT\\Mozaic\\images\\tiles");
+
+    if (!fs::exists(tilesPath)) {
+        fs::create_directory(tilesPath);
+        generateTiles();
+        std::cout << "Folder doesnt exist. I created it and generated the tiles." << std::endl;
+    }
+    else if(fs::is_empty(tilesPath)){
+        generateTiles();
+        cout << "I generated the tiles" << endl;
+    }
+    else{
+        cout << "Tiles folder already contains tiles" << endl;
+    }
+
+    try{
+        img = loadImages("leaf");
+        noSegments = processOriginal(img.source);
+    }
+    catch(runtime_error& e){
+        //prindem eroare pentru numele incorect al imaginii mari
+        cerr << e.what() << endl;
+        return 0;
+    }
+
+    try{
+        seg = imageSegmentation(img.source, noSegments);
+    }
+    catch(runtime_error& e){
+        //prindem eroarea de dimensiune
+        cerr << e.what() << endl;
+        return 0;
+    }
+
+    try{
+        auto start = chrono::high_resolution_clock::now();
+        bestTilesMean = findBestMatches(seg, img.tiles, 1);
+        auto end = chrono::high_resolution_clock::now();
+        double duration = chrono::duration_cast<chrono::seconds>(end - start).count();
+        printf("\n Duration for means method: %lf seconds\n",duration);
+
+        start = chrono::high_resolution_clock::now();
+        bestTilesHist = findBestMatches(seg, img.tiles, 2);
+        end = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<chrono::seconds>(end - start).count();
+        printf("\n Duration for histograms method: %lf seconds\n",duration);
+    }
+    catch(runtime_error& e){
+        //prindem eroarea pentru optiune invalida
+        cerr << e.what() << endl;
+        return 0;
+    }
+
+    Mat result1 = composeMosaic(img.source, seg, bestTilesMean);
+    Mat result2 = composeMosaic(img.source, seg, bestTilesHist);
+
+    imshow("Result1", result1);
+    imshow("Result2", result2);
+
+    waitKey(0);
+    return 0;
+}
